@@ -21,7 +21,9 @@
 
 #pragma once
 
+#include <condition_variable>
 #include <cstdint>
+#include <mutex>
 
 namespace lightswitch {
 
@@ -104,17 +106,77 @@ public:
 
     //! Return true if wait() would block, false otherwise
     inline bool would_block();
+private:
+    inline void inner_count_down();
+    inline void inner_wait(std::unique_lock<std::mutex> &lock);
+
+    std::size_t count_;
+    std::size_t reset_;
+    std::size_t waiting_;
+    std::mutex mutex_;
+    std::condition_variable cv_;
 };
 
-// Stubs all functions
+inline latch::latch(std::size_t count) :
+  count_(count), reset_(count), waiting_(0)
+{}
 
-inline latch::latch(std::size_t count) {}
-inline std::size_t latch::count() {return 0;}
-inline void latch::count_down() {}
-inline void latch::count_down_and_wait() {}
-inline void latch::reset() {}
-inline void latch::reset(std::size_t value) {}
-inline void latch::wait() {}
-inline bool latch::would_block() {return false;}
+inline std::size_t latch::count() {
+    // No real need to acquire the mutex here
+    return count_;
+}
+
+inline void latch::inner_count_down() {
+    if (count_ == 0) return;
+    count_--;
+    if (count_ == 0) {
+        cv_.notify_all();
+    }
+}
+
+inline void latch::count_down() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    inner_count_down();
+}
+
+inline void latch::count_down_and_wait() {
+    std::unique_lock<std::mutex> lock(mutex_);
+    inner_count_down();
+    if (count_ != 0) inner_wait(lock);
+}
+
+inline void latch::reset() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (waiting_ != 0) {
+        throw std::runtime_error("reset() forbidden while threads are waiting");
+    }
+    count_ = reset_;
+}
+
+inline void latch::reset(std::size_t value) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (waiting_ != 0) {
+        throw std::runtime_error("reset() forbidden while threads are waiting");
+    }
+    count_ = value;
+}
+
+inline void latch::inner_wait(std::unique_lock<std::mutex> &lock) {
+    waiting_++;
+    while(count_ != 0) {
+        cv_.wait(lock);
+    }
+    waiting_--;
+}
+
+inline void latch::wait() {
+    std::unique_lock<std::mutex> lock(mutex_);
+    inner_wait(lock);
+}
+
+inline bool latch::would_block() {
+    // No real need to acquire the mutex here
+    return count_ != 0;
+}
 
 } // namespace
