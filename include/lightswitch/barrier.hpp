@@ -21,7 +21,9 @@
 
 #pragma once
 
+#include <condition_variable>
 #include <cstdint>
+#include <mutex>
 
 namespace lightswitch {
 
@@ -70,13 +72,40 @@ public:
 
     //! Return true if wait() would block, false otherwise
     inline bool would_block();
+private:
+    std::condition_variable cv_;
+    std::mutex mutex_;
+    std::size_t count_;
+    std::size_t reset_;
+    std::size_t generation_;
 };
 
-// Stubs all functions
+inline barrier::barrier(std::size_t size) :
+    count_(size), reset_(size), generation_(0)
+{}
 
-inline barrier::barrier(std::size_t size) {}
-inline std::size_t barrier::count() {return 0;}
-inline bool barrier::wait() {return false;}
-inline bool barrier::would_block() {return false;}
+inline std::size_t barrier::count() {
+    return count_;
+}
+
+inline bool barrier::wait() {
+    std::unique_lock<std::mutex> lock(mutex_);
+    if (count_ == 1) {
+        count_ = reset_;
+        generation_++;
+        cv_.notify_all();
+        return true;
+    }
+    count_--;
+    const auto curr_generation = generation_;
+    while (curr_generation == generation_) {
+        cv_.wait(lock);
+    }
+    return false;
+}
+
+inline bool barrier::would_block() {
+    return count_ != 1;
+}
 
 } // namespace
