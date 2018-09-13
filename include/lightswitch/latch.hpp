@@ -42,7 +42,7 @@ public:
      *
      * \param[in] count: counter initial value
      */
-    inline explicit latch(std::size_t count);
+    inline explicit latch(std::size_t count) noexcept;
 
     // Latches can't be copy constructed
     latch(const latch &o) = delete;
@@ -51,7 +51,7 @@ public:
     latch(latch &&o) = delete;
 
     //! Return the current value of the counter
-    inline std::size_t count();
+    inline std::size_t count() noexcept;
 
     /**
      * Decrement the counter by 1
@@ -105,7 +105,7 @@ public:
     inline void wait();
 
     //! Return true if wait() would block, false otherwise
-    inline bool would_block();
+    inline bool would_block() noexcept;
 private:
     inline void inner_count_down();
     inline void inner_wait(std::unique_lock<std::mutex> &lock);
@@ -117,11 +117,11 @@ private:
     std::condition_variable cv_;
 };
 
-inline latch::latch(std::size_t count) :
+inline latch::latch(std::size_t count) noexcept :
   count_(count), reset_(count), waiting_(0)
 {}
 
-inline std::size_t latch::count() {
+inline std::size_t latch::count() noexcept {
     // No real need to acquire the mutex here
     return count_;
 }
@@ -174,7 +174,7 @@ inline void latch::wait() {
     inner_wait(lock);
 }
 
-inline bool latch::would_block() {
+inline bool latch::would_block() noexcept {
     // No real need to acquire the mutex here
     return count_ != 0;
 }

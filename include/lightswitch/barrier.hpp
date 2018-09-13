@@ -41,7 +41,7 @@ public:
      * \param[in] size: number of threads that will use the barrier. Must be
      *                  greater than 0 or the barrier behavior will be undefined
      */
-    explicit inline barrier(std::size_t size);
+    explicit inline barrier(std::size_t size) noexcept;
 
     // Barriers can't be copy constructed
     barrier(const barrier &o) = delete;
@@ -55,7 +55,7 @@ public:
      * Counter is the current number of threads that must arrive to unlock the
      * barrier. When counter reaches 0, the barrier is unlocked.
      */
-    inline std::size_t count();
+    inline std::size_t count() noexcept;
 
     /**
      * Wait for all the threads to invoke wait()
@@ -71,7 +71,7 @@ public:
     inline bool wait();
 
     //! Return true if wait() would block, false otherwise
-    inline bool would_block();
+    inline bool would_block() noexcept;
 private:
     std::condition_variable cv_;
     std::mutex mutex_;
@@ -80,11 +80,12 @@ private:
     std::size_t generation_;
 };
 
-inline barrier::barrier(std::size_t size) :
+inline barrier::barrier(std::size_t size) noexcept :
     count_(size), reset_(size), generation_(0)
 {}
 
-inline std::size_t barrier::count() {
+inline std::size_t barrier::count() noexcept {
+    // No real need to acquire the mutex here
     return count_;
 }
 
@@ -104,7 +105,8 @@ inline bool barrier::wait() {
     return false;
 }
 
-inline bool barrier::would_block() {
+inline bool barrier::would_block() noexcept {
+    // No real need to acquire the mutex here
     return count_ != 1;
 }
 
