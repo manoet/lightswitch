@@ -1,4 +1,5 @@
 # lightswitch
+[![Build Status](https://travis-ci.org/manoet/lightswitch.svg?branch=master)](https://travis-ci.org/manoet/lightswitch)
 Lightswitch is an extremely light header-only library providing some concurrency
 facilities that are still missing from the language, i.e. barriers and latches.
 
