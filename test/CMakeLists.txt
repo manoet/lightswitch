@@ -13,4 +13,9 @@ target_link_libraries(
     GTest::Main
     lightswitch)
 
+set_target_properties(
+    ts_lightswitch
+    PROPERTIES
+    CXX_STANDARD 14)
+
 add_test(ts_lightswitch ts_lightswitch)
