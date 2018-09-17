@@ -7,7 +7,7 @@ Lightswitch is header-only, the easier way to use it is to download the header
 files and put wherever you prefer in your project.
 
 ## License
-[https://opensource.org/licenses/FPL-1.0.0](FPL 1.0)
+MIT
 
 ## Dependencies
 The library itself has no dependency other than the standard c++ library.
