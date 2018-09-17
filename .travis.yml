@@ -1,0 +1,44 @@
+language: cpp
+
+install:
+  - sudo apt-get install -y cmake
+  - sudo apt-get install -y libgtest-dev
+  - mkdir build_gtest
+  - cd build_gtest
+  - cmake /usr/src/gtest
+  - sudo make
+  - sudo cp libgtest* /usr/lib
+  - cd ..
+
+matrix:
+  include:
+    # upgrade g++
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-5
+      env:
+        - MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
+    # upgrade clang
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.6
+          packages:
+            - clang-3.6
+      env:
+        - MATRIX_EVAL="CC=clang-3.6 && CXX=clang++-3.6"
+
+before_script:
+    eval "${MATRIX_EVAL}"
+
+script:
+  - $CXX --version
+  - cmake .
+  - make
+  - ./test/ts_lightswitch
